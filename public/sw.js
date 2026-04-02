@@ -28,12 +28,22 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      // Se já tiver uma aba aberta, foca nela
       for (let client of windowClients) {
         if ('focus' in client) return client.focus();
       }
+      // Senão, abre uma nova
       if (clients.openWindow) return clients.openWindow('/');
     })
   );
+});
+
+// Listener para mensagens vindas do app (opcional, para debug ou controle extra)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

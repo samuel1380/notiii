@@ -124,7 +124,7 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const base64 = ev.target?.result as string;
-      setConfig(prev => ({ ...prev, iconBase64: base64 }));
+      setConfig((prev: NotifyConfig) => ({ ...prev, iconBase64: base64 }));
       showToast('✅ Imagem carregada!');
     };
     reader.readAsDataURL(file);
@@ -147,7 +147,7 @@ export default function App() {
     try {
       const result = await smartExtractIcon(url);
       if (result) {
-        setConfig(prev => ({ ...prev, iconBase64: result.base64 }));
+        setConfig((prev: NotifyConfig) => ({ ...prev, iconBase64: result.base64 }));
         showToast(`✅ Ícone extraído da ${result.source}!`);
         setShowExtractor(false);
         setExtractUrl('');
@@ -175,7 +175,7 @@ export default function App() {
     try {
       const result = await smartExtractIcon(tpl.storeUrl);
       if (result) {
-        setConfig(prev => ({ ...prev, iconBase64: result.base64 }));
+        setConfig((prev: NotifyConfig) => ({ ...prev, iconBase64: result.base64 }));
       }
     } catch {}
 
@@ -199,13 +199,18 @@ export default function App() {
     const finalTitle = c.title || 'Notificação';
     const tag = Date.now().toString();
 
-    const options: NotificationOptions = {
+    const options: any = {
       body: c.body || '',
-      icon: c.iconBase64 || undefined,
-      badge: c.iconBase64 || undefined,
+      icon: c.iconBase64 || '/icon-192.png',
+      badge: '/icon-192.png', // Badge deve ser um ícone pequeno e simples (monocromático no Android)
       tag,
-      silent: false,
-      requireInteraction: false,
+      vibrate: [200, 100, 200],
+      data: {
+        url: window.location.origin
+      },
+      badgeConfig: {
+        src: '/icon-192.png'
+      }
     };
 
     // Monta o título completo
@@ -214,15 +219,19 @@ export default function App() {
       : finalTitle;
 
     try {
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.ready;
+      if (registration && registration.showNotification) {
         await registration.showNotification(displayTitle, options);
       } else {
         new Notification(displayTitle, options);
       }
-    } catch {
-      // Fallback
-      new Notification(displayTitle, options);
+    } catch (err) {
+      console.warn('Erro ao enviar via SW, tentando fallback:', err);
+      try {
+        new Notification(displayTitle, options);
+      } catch (e) {
+        showToast('❌ Erro ao exibir notificação');
+      }
     }
 
     // Salvar no histórico

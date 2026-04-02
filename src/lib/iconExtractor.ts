@@ -18,9 +18,9 @@ export async function extractAppStoreIcon(url: string): Promise<string | null> {
     if (data.results && data.results.length > 0) {
       // artworkUrl512 é a maior, mas nem sempre existe. artworkUrl100 sempre existe.
       let iconUrl = data.results[0].artworkUrl512 || data.results[0].artworkUrl100;
-      // Forçar resolução 512x512 trocando no URL
+      // Forçar resolução 192x192 trocando no URL (mais leve para base64)
       if (iconUrl) {
-        iconUrl = iconUrl.replace(/\d+x\d+/, '512x512');
+        iconUrl = iconUrl.replace(/\d+x\d+/, '192x192');
       }
       return iconUrl || null;
     }
